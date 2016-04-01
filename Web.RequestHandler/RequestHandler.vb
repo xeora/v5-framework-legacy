@@ -263,7 +263,7 @@ Namespace SolidDevelopment.Web
                                     If Me._ThemeWebControl.Theme.Addons.CurrentInstance Is Nothing Then
 PARENTCALL:
                                         tAssembleResultInfo =
-                                            Managers.Assembly.AssemblePostBackInformation(AssembleInfo)
+                                            Managers.Assembly.AssemblePostBackInformation(AssembleInfo, Managers.Assembly.ExecuterTypes.Undefined)
 
                                         If tAssembleResultInfo.ReloadRequired AndAlso
                                             Not IsAddonsCalled Then
@@ -277,7 +277,7 @@ PARENTCALL:
                                                         Managers.Assembly.AssemblePostBackInformation(
                                                                         Me._ThemeWebControl.Theme.CurrentID,
                                                                         Me._ThemeWebControl.Theme.Addons.CurrentInstance.CurrentID,
-                                                                        AssembleInfo, Nothing)
+                                                                        AssembleInfo, Nothing, Managers.Assembly.ExecuterTypes.Undefined)
 
                                                     Me._ThemeWebControl.Theme.Addons.DisposeInstance()
                                                 End If
@@ -290,7 +290,7 @@ PARENTCALL:
                                             Managers.Assembly.AssemblePostBackInformation(
                                                             Me._ThemeWebControl.Theme.CurrentID,
                                                             Me._ThemeWebControl.Theme.Addons.CurrentInstance.CurrentID,
-                                                            AssembleInfo, Nothing)
+                                                            AssembleInfo, Nothing, Managers.Assembly.ExecuterTypes.Undefined)
 
                                         If tAssembleResultInfo.ReloadRequired Then GoTo PARENTCALL
                                     End If

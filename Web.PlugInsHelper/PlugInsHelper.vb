@@ -2041,15 +2041,24 @@ Namespace SolidDevelopment.Web
                                             )
 
                 SyncLock General.Context.Session.SyncRoot
-                    General.Context.Session.Contents.Remove(SessionKey)
-                    If Not value Is Nothing Then
-                        Try
-                            General.Context.Session.Contents.Item(SessionKey) = value
-                        Catch ex As Exception
-                            ' Just Handle Exceptions
-                            ' TODO: Must investigate SESSION "KEY ADDED" PROBLEMS
-                        End Try
-                    End If
+                    Try
+                        General.Context.Session.Contents.Remove(SessionKey)
+
+                        If Not value Is Nothing Then _
+                                General.Context.Session.Contents.Item(SessionKey) = value
+                    Catch ex As Exception
+                        ' Just Handle Exceptions
+                        ' TODO: 
+
+                        '-- APPLICATION EXCEPTION --
+                        'System.NullReferenceException : Object reference Not set to an instance of an object.
+                        '   at System.Collections.Specialized.NameObjectCollectionBase.BaseRemove(String name)
+                        '   at System.Web.SessionState.SessionStateItemCollection.Remove(String name)
+                        '   at SolidDevelopment.Web.General.set_CurrentInstantAddonID(String value) in P:\XeoraCube\Web.PlugInsHelper\PlugInsHelper.vb:line 2045
+                        '   at SolidDevelopment.Web.Managers.Theme.AddonsClass.DisposeInstance() in P: \XeoraCube\Web.Managers\Theme.vb:line 3091
+                        '   at SolidDevelopment.Web.Managers.ThemeWebControl.get_URLMappingInfo() in P: \XeoraCube\Web.Managers\ThemeWebControl.vb:line 120
+                        '   at SolidDevelopment.Web.RequestHandler.XeoraHandler.HandleRequest(HttpContext context) in P:\XeoraCube\Web.RequestHandler\RequestHandler.vb:line 91
+                    End Try
                 End SyncLock
             End Set
         End Property

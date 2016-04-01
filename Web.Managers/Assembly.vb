@@ -2,6 +2,12 @@ Option Strict On
 
 Namespace SolidDevelopment.Web.Managers
     Public Class [Assembly]
+        Public Enum ExecuterTypes
+            Control
+            Other
+            Undefined
+        End Enum
+
         Public Shared Sub PrepareArguments(ByVal ArgumentInfos As Globals.ArgumentInfo.ArgumentInfoCollection, ByVal ArgumentNameList As String(), ByRef ArgumentValueList As Object())
             ' Fix Possible Null Post for ArgumentValueList
             ArgumentValueList = New Object() {}
@@ -13,17 +19,17 @@ Namespace SolidDevelopment.Web.Managers
                 Dim rArgumentValueList As New ArrayList
 
                 For Each ArgumentName As String In ArgumentNameList
-                    If Not ArgumentName Is Nothing AndAlso _
+                    If Not ArgumentName Is Nothing AndAlso
                         ArgumentName.Trim().Length > 0 Then
 
                         Select Case ArgumentName.Chars(0)
                             Case "^"c ' QueryString
-                                Dim QueryValue As String = _
+                                Dim QueryValue As String =
                                     SolidDevelopment.Web.General.Context.Request.QueryString.Item(ArgumentName.Substring(1))
 
                                 Select Case SolidDevelopment.Web.Configurations.RequestTagFiltering
                                     Case PGlobals.RequestTagFilteringTypes.OnlyQuery, PGlobals.RequestTagFilteringTypes.Both
-                                        Dim ArgumentNameForCompare As String = _
+                                        Dim ArgumentNameForCompare As String =
                                             ArgumentName.Substring(1).ToLower(New Globalization.CultureInfo("en-US"))
 
                                         If Array.IndexOf(SolidDevelopment.Web.Configurations.RequestTagFilteringExceptions, ArgumentNameForCompare) = -1 Then _
@@ -33,14 +39,14 @@ Namespace SolidDevelopment.Web.Managers
                                 rArgumentValueList.Add(CObj(QueryValue))
                             Case "~"c ' Form Post
                                 ' File Post is not supporting on XML Http Requests
-                                Dim RequestFilesKeys As String() = _
+                                Dim RequestFilesKeys As String() =
                                     SolidDevelopment.Web.General.Context.Request.Files.AllKeys
                                 Dim RequestFileObjects As New System.Collections.Generic.List(Of System.Web.HttpPostedFile)
 
                                 For kC As Integer = 0 To RequestFilesKeys.Length - 1
                                     If String.Compare(RequestFilesKeys(kC), ArgumentName.Substring(1), True) = 0 Then
-                                        RequestFileObjects.Add( _
-                                                SolidDevelopment.Web.General.Context.Request.Files.Item(kC) _
+                                        RequestFileObjects.Add(
+                                                SolidDevelopment.Web.General.Context.Request.Files.Item(kC)
                                             )
                                     End If
                                 Next
@@ -48,25 +54,25 @@ Namespace SolidDevelopment.Web.Managers
 
                                 If RequestFileObjects.Count = 0 Then
                                     If String.Compare(General.Context.Request.HttpMethod, "POST", True) = 0 Then
-                                        Dim ControlSIM As Hashtable = _
-                                            CType( _
-                                                SolidDevelopment.Web.General.GetVariable("_sys_ControlSIM"),  _
-                                                Hashtable _
+                                        Dim ControlSIM As Hashtable =
+                                            CType(
+                                                SolidDevelopment.Web.General.GetVariable("_sys_ControlSIM"),
+                                                Hashtable
                                             )
 
-                                        If Not ControlSIM Is Nothing AndAlso _
+                                        If Not ControlSIM Is Nothing AndAlso
                                             ControlSIM.ContainsKey(ArgumentName.Substring(1)) Then
 
-                                            rArgumentValueList.Add( _
-                                                ControlSIM.Item(ArgumentName.Substring(1)) _
+                                            rArgumentValueList.Add(
+                                                ControlSIM.Item(ArgumentName.Substring(1))
                                             )
                                         Else
-                                            Dim FormValue As String = _
+                                            Dim FormValue As String =
                                                 SolidDevelopment.Web.General.Context.Request.Form.Item(ArgumentName.Substring(1))
 
                                             Select Case SolidDevelopment.Web.Configurations.RequestTagFiltering
                                                 Case PGlobals.RequestTagFilteringTypes.OnlyForm, PGlobals.RequestTagFilteringTypes.Both
-                                                    Dim ArgumentNameForCompare As String = _
+                                                    Dim ArgumentNameForCompare As String =
                                                         ArgumentName.Substring(1).ToLower(New Globalization.CultureInfo("en-US"))
 
                                                     If Array.IndexOf(SolidDevelopment.Web.Configurations.RequestTagFilteringExceptions, ArgumentNameForCompare) = -1 Then _
@@ -82,30 +88,30 @@ Namespace SolidDevelopment.Web.Managers
                                 Else
                                     Select Case RequestFileObjects.Count
                                         Case 1
-                                            rArgumentValueList.Add( _
-                                                    CObj(RequestFileObjects.Item(0)) _
+                                            rArgumentValueList.Add(
+                                                    CObj(RequestFileObjects.Item(0))
                                                 )
                                         Case Else
-                                            rArgumentValueList.Add( _
-                                                    RequestFileObjects.ToArray() _
+                                            rArgumentValueList.Add(
+                                                    RequestFileObjects.ToArray()
                                                 )
                                     End Select
                                 End If
                             Case "-"c ' Session
-                                rArgumentValueList.Add( _
-                                        SolidDevelopment.Web.General.Context.Session.Contents.Item(ArgumentName.Substring(1)) _
+                                rArgumentValueList.Add(
+                                        SolidDevelopment.Web.General.Context.Session.Contents.Item(ArgumentName.Substring(1))
                                     )
                             Case "+"c ' Cookie
                                 If SolidDevelopment.Web.General.Context.Request.Cookies.Item(ArgumentName.Substring(1)) Is Nothing Then
                                     rArgumentValueList.Add(Nothing)
                                 Else
-                                    rArgumentValueList.Add( _
-                                            CObj(SolidDevelopment.Web.General.Context.Request.Cookies.Item(ArgumentName.Substring(1)).Value) _
+                                    rArgumentValueList.Add(
+                                            CObj(SolidDevelopment.Web.General.Context.Request.Cookies.Item(ArgumentName.Substring(1)).Value)
                                         )
                                 End If
                             Case "="c ' Value String near '='
-                                rArgumentValueList.Add( _
-                                        CObj(ArgumentName.Substring(1)) _
+                                rArgumentValueList.Add(
+                                        CObj(ArgumentName.Substring(1))
                                     )
                             Case "#"c ' Data Field Value
                                 Dim searchVariableCollection As Globals.ArgumentInfo.ArgumentInfoCollection = ArgumentInfos
@@ -122,10 +128,10 @@ Namespace SolidDevelopment.Web.Managers
                                 Loop Until searchVariableCollection Is Nothing
 
                                 If Not searchVariableCollection Is Nothing Then
-                                    Dim argItem As Globals.ArgumentInfo = _
+                                    Dim argItem As Globals.ArgumentInfo =
                                         searchVariableCollection.Item(searchVariableName)
 
-                                    If Not argItem.Value Is Nothing AndAlso _
+                                    If Not argItem.Value Is Nothing AndAlso
                                         Not argItem.Value.GetType() Is GetType(System.DBNull) Then
 
                                         rArgumentValueList.Add(argItem.Value)
@@ -150,16 +156,16 @@ Namespace SolidDevelopment.Web.Managers
                                 If String.IsNullOrEmpty(searchArgValue) Then searchArgValue = CType(SolidDevelopment.Web.General.Context.Session.Contents.Item(searchArgName), String)
 
                                 ' Search In Form Post [Do not support File Posts]
-                                If String.IsNullOrEmpty(searchArgValue) AndAlso _
+                                If String.IsNullOrEmpty(searchArgValue) AndAlso
                                     String.Compare(General.Context.Request.HttpMethod, "POST", True) = 0 Then
 
-                                    Dim ControlSIM As Hashtable = _
-                                        CType( _
-                                            SolidDevelopment.Web.General.GetVariable("_sys_ControlSIM"),  _
-                                            Hashtable _
+                                    Dim ControlSIM As Hashtable =
+                                        CType(
+                                            SolidDevelopment.Web.General.GetVariable("_sys_ControlSIM"),
+                                            Hashtable
                                         )
 
-                                    If Not ControlSIM Is Nothing AndAlso _
+                                    If Not ControlSIM Is Nothing AndAlso
                                         ControlSIM.ContainsKey(searchArgName) Then
 
                                         searchArgValue = CType(ControlSIM.Item(searchArgName), String)
@@ -174,7 +180,7 @@ Namespace SolidDevelopment.Web.Managers
                                 If String.IsNullOrEmpty(searchArgValue) Then searchArgValue = SolidDevelopment.Web.General.Context.Request.QueryString.Item(searchArgName)
 
                                 ' Cookie
-                                If String.IsNullOrEmpty(searchArgValue) AndAlso _
+                                If String.IsNullOrEmpty(searchArgValue) AndAlso
                                     Not SolidDevelopment.Web.General.Context.Request.Cookies.Item(searchArgName) Is Nothing Then
 
                                     searchArgValue = SolidDevelopment.Web.General.Context.Request.Cookies.Item(searchArgName).Value
@@ -183,7 +189,7 @@ Namespace SolidDevelopment.Web.Managers
                                 rArgumentValueList.Add(CObj(searchArgValue))
                             Case Else ' Search in Values Set for Current Request Session
                                 If ArgumentName.IndexOf("@"c) > 0 Then
-                                    Dim ArgumentQueryObjectName As String = _
+                                    Dim ArgumentQueryObjectName As String =
                                         ArgumentName.Substring(ArgumentName.IndexOf("@"c) + 1)
 
                                     Dim ArgumentQueryObject As Object = Nothing
@@ -206,7 +212,7 @@ Namespace SolidDevelopment.Web.Managers
                                             Loop Until searchContentInfo Is Nothing
 
                                             If Not searchContentInfo Is Nothing Then
-                                                Dim argItem As Globals.ArgumentInfo = _
+                                                Dim argItem As Globals.ArgumentInfo =
                                                     searchContentInfo.Item(searchVariableName)
 
                                                 If Not argItem.Value Is Nothing Then ArgumentQueryObject = argItem.Value
@@ -251,7 +257,7 @@ Namespace SolidDevelopment.Web.Managers
         End Sub
 
         Public Shared Function EncodeCallFunction(ByVal EncodingHashCode As String, ByVal CallFunctionForEncoding As String) As String
-            Dim SplitECF As String() = _
+            Dim SplitECF As String() =
                 CallFunctionForEncoding.Split(","c)
 
             ' First Part of Encoded Call Function
@@ -272,8 +278,8 @@ Namespace SolidDevelopment.Web.Managers
             Dim EncodedCF02 As String = String.Empty
 
             If Not String.IsNullOrEmpty(DecodedCF02) Then
-                EncodedCF02 = System.Convert.ToBase64String( _
-                                    System.Text.Encoding.UTF8.GetBytes(DecodedCF02) _
+                EncodedCF02 = System.Convert.ToBase64String(
+                                    System.Text.Encoding.UTF8.GetBytes(DecodedCF02)
                                 )
             End If
 
@@ -300,9 +306,9 @@ Namespace SolidDevelopment.Web.Managers
                 Do Until GZipHelperStream.Position = GZipHelperStream.Length
                     ByteCoded = CType(GZipHelperStream.ReadByte(), Byte)
 
-                    ByteCoded = ByteCoded Xor CType( _
-                                                    Asc(EncodingHashCode.Chars(bC Mod EncodingHashCode.Length)), _
-                                                    Byte _
+                    ByteCoded = ByteCoded Xor CType(
+                                                    Asc(EncodingHashCode.Chars(bC Mod EncodingHashCode.Length)),
+                                                    Byte
                                                 )
 
                     GZipHelperStream.Seek(-1, IO.SeekOrigin.Current)
@@ -326,21 +332,21 @@ Namespace SolidDevelopment.Web.Managers
                 End If
             End Try
 
-            Dim rEncodedString As String = _
-                CType( _
-                    IIf( _
-                        IsDecodedCF02Exist, _
-                        String.Format("{0},{1},{2}", EncodingHashCode, System.Web.HttpUtility.UrlEncode(EncodedCF01), System.Web.HttpUtility.UrlEncode(EncodedCF02)), _
-                        String.Format("{0},{1}", EncodingHashCode, System.Web.HttpUtility.UrlEncode(EncodedCF01)) _
-                    ), _
-                    String _
+            Dim rEncodedString As String =
+                CType(
+                    IIf(
+                        IsDecodedCF02Exist,
+                        String.Format("{0},{1},{2}", EncodingHashCode, System.Web.HttpUtility.UrlEncode(EncodedCF01), System.Web.HttpUtility.UrlEncode(EncodedCF02)),
+                        String.Format("{0},{1}", EncodingHashCode, System.Web.HttpUtility.UrlEncode(EncodedCF01))
+                    ),
+                    String
                 )
 
             Return rEncodedString
         End Function
 
         Public Shared Function DecodeCallFunction(ByVal EncodedCallFunction As String) As String
-            Dim SplitECF As String() = _
+            Dim SplitECF As String() =
                 EncodedCallFunction.Split(","c)
 
             Dim DecodedCF01 As String = String.Empty, DecodedCF02 As String
@@ -351,7 +357,7 @@ Namespace SolidDevelopment.Web.Managers
             '   Base64 contains encrypted Data
             '   EncData = XOR HashCode applied on to deflated compression
             Dim EncodedCF01 As String = SplitECF(1)
-            If Not EncodedCF01.Contains("+") AndAlso _
+            If Not EncodedCF01.Contains("+") AndAlso
                 EncodedCF01.Contains("%") Then EncodedCF01 = System.Web.HttpUtility.UrlDecode(EncodedCF01)
             ' Second Part of Encoded Call Function (Parameters)
             '   [Parameter]|[Parameter]|...
@@ -360,20 +366,20 @@ Namespace SolidDevelopment.Web.Managers
             If SplitECF.Length = 3 Then
                 EncodedCF02 = SplitECF(2)
 
-                If Not EncodedCF02.Contains("+") AndAlso _
+                If Not EncodedCF02.Contains("+") AndAlso
                     EncodedCF02.Contains("%") Then EncodedCF02 = System.Web.HttpUtility.UrlDecode(EncodedCF02)
             End If
 
             Dim EncodedText As New System.Text.StringBuilder
 
-            Dim bC As Integer, buffer As Byte() = _
+            Dim bC As Integer, buffer As Byte() =
                     System.Convert.FromBase64String(EncodedCF01)
 
             ' EncData to DecData Process
             For bC = 0 To buffer.Length - 1
-                buffer(bC) = buffer(bC) Xor CType( _
-                                                    Asc(EncodingHashCode.Chars(bC Mod EncodingHashCode.Length)), _
-                                                    Byte _
+                buffer(bC) = buffer(bC) Xor CType(
+                                                    Asc(EncodingHashCode.Chars(bC Mod EncodingHashCode.Length)),
+                                                    Byte
                                                 )
             Next
             ' !--
@@ -396,8 +402,8 @@ Namespace SolidDevelopment.Web.Managers
                 Do
                     bC = GZipStream.Read(rbuffer, 0, rbuffer.Length)
 
-                    If bC > 0 Then EncodedText.Append( _
-                                        System.Text.Encoding.UTF8.GetString(rbuffer, 0, bC) _
+                    If bC > 0 Then EncodedText.Append(
+                                        System.Text.Encoding.UTF8.GetString(rbuffer, 0, bC)
                                     )
                 Loop While bC > 0
             Finally
@@ -415,8 +421,8 @@ Namespace SolidDevelopment.Web.Managers
             ' Decode The Parameters Part
             Dim rDecodedString As String
             If Not String.IsNullOrEmpty(EncodedCF02) Then
-                DecodedCF02 = System.Text.Encoding.UTF8.GetString( _
-                                    System.Convert.FromBase64String(EncodedCF02) _
+                DecodedCF02 = System.Text.Encoding.UTF8.GetString(
+                                    System.Convert.FromBase64String(EncodedCF02)
                                 )
 
                 rDecodedString = String.Format("{0},{1}", DecodedCF01, DecodedCF02)
@@ -430,8 +436,8 @@ Namespace SolidDevelopment.Web.Managers
         Public Shared Function CleanHTMLTags(ByVal Content As String, ByVal CleaningTags As String()) As String
             Dim RegExSearch As System.Text.RegularExpressions.Regex
 
-            If Not String.IsNullOrEmpty(Content) AndAlso _
-                Not CleaningTags Is Nothing AndAlso _
+            If Not String.IsNullOrEmpty(Content) AndAlso
+                Not CleaningTags Is Nothing AndAlso
                 CleaningTags.Length > 0 Then
 
                 Dim SearchType As Integer = 0, tContent As String = String.Empty
@@ -439,13 +445,13 @@ Namespace SolidDevelopment.Web.Managers
 
                 For Each CleaningTag As String In CleaningTags
                     If CleaningTag.IndexOf(">"c) = 0 Then
-                        RegExSearch = New System.Text.RegularExpressions.Regex( _
-                                        String.Format("<{0}(\s+[^>]*)*>", CleaningTag.Substring(1)) _
+                        RegExSearch = New System.Text.RegularExpressions.Regex(
+                                        String.Format("<{0}(\s+[^>]*)*>", CleaningTag.Substring(1))
                                     )
                         SearchType = 1
                     Else
-                        RegExSearch = New System.Text.RegularExpressions.Regex( _
-                                        String.Format("<{0}(\s+[^>]*)*(/)?>", CleaningTag) _
+                        RegExSearch = New System.Text.RegularExpressions.Regex(
+                                        String.Format("<{0}(\s+[^>]*)*(/)?>", CleaningTag)
                                     )
                         SearchType = 0
                     End If
@@ -459,9 +465,9 @@ Namespace SolidDevelopment.Web.Managers
 
                             Select Case SearchType
                                 Case 1
-                                    Dim tailRegExSearch As New System.Text.RegularExpressions.Regex( _
+                                    Dim tailRegExSearch As New System.Text.RegularExpressions.Regex(
                                         String.Format("</{0}>", CleaningTag.Substring(1)))
-                                    Dim tailRegMatch As System.Text.RegularExpressions.Match = _
+                                    Dim tailRegMatch As System.Text.RegularExpressions.Match =
                                         tailRegExSearch.Match(Content, LastSearchIndex)
 
                                     If tailRegMatch.Success Then
@@ -478,25 +484,25 @@ Namespace SolidDevelopment.Web.Managers
                     End If
                 Next
             End If
-            
+
             Return Content
         End Function
 
-        Public Overloads Shared Function AssemblePostBackInformation(ByVal AssembleInfo As String) As PGlobals.Execution.AssembleResultInfo
-            Return [Assembly].AssemblePostBackInformation(Nothing, Nothing, AssembleInfo, Nothing)
+        Public Overloads Shared Function AssemblePostBackInformation(ByVal AssembleInfo As String, ByVal ExecuterType As ExecuterTypes) As PGlobals.Execution.AssembleResultInfo
+            Return [Assembly].AssemblePostBackInformation(Nothing, Nothing, AssembleInfo, Nothing, ExecuterType)
         End Function
 
-        Public Overloads Shared Function AssemblePostBackInformation(ByVal AssembleInfo As String, ByVal ArgumentInfos As Globals.ArgumentInfo.ArgumentInfoCollection) As PGlobals.Execution.AssembleResultInfo
-            Return [Assembly].AssemblePostBackInformation(Nothing, Nothing, AssembleInfo, ArgumentInfos)
+        Public Overloads Shared Function AssemblePostBackInformation(ByVal AssembleInfo As String, ByVal ArgumentInfos As Globals.ArgumentInfo.ArgumentInfoCollection, ByVal ExecuterType As ExecuterTypes) As PGlobals.Execution.AssembleResultInfo
+            Return [Assembly].AssemblePostBackInformation(Nothing, Nothing, AssembleInfo, ArgumentInfos, ExecuterType)
         End Function
 
         Private Shared _DllObjectLibrary As New Hashtable
         Private Shared _PrivateBinPath As String = Nothing
-        Public Overloads Shared Function AssemblePostBackInformation(ByVal ThemeID As String, ByVal AddonID As String, ByVal AssembleInfo As String, ByVal ArgumentInfos As Globals.ArgumentInfo.ArgumentInfoCollection) As PGlobals.Execution.AssembleResultInfo
+        Public Overloads Shared Function AssemblePostBackInformation(ByVal ThemeID As String, ByVal AddonID As String, ByVal AssembleInfo As String, ByVal ArgumentInfos As Globals.ArgumentInfo.ArgumentInfoCollection, ByVal ExecuterType As ExecuterTypes) As PGlobals.Execution.AssembleResultInfo
             Dim rAssembleResultInfo As PGlobals.Execution.AssembleResultInfo
 
             ' Load All Addons of Theme if ThemeID and AddonID is not Pass Empty
-            If Not String.IsNullOrEmpty(ThemeID) AndAlso _
+            If Not String.IsNullOrEmpty(ThemeID) AndAlso
                 Not String.IsNullOrEmpty(AddonID) Then
 
                 Assembly.QueryThemeAddons(ThemeID, Nothing)
@@ -524,14 +530,14 @@ Namespace SolidDevelopment.Web.Managers
             Dim ArgumentValueList As Object() = New Object() {}
             Assembly.PrepareArguments(ArgumentInfos, rAssembleResultInfo.FunctionParams, ArgumentValueList)
 
-            Dim PlugInsPath As String = _
-                    IO.Path.Combine( _
-                        SolidDevelopment.Web.Configurations.TemporaryRoot, _
-                        String.Format("{0}{2}{1}", _
-                            Configurations.WorkingPath.WorkingPathID, _
-                            General.Context.Items.Item("ApplicationID"), _
-                            IO.Path.DirectorySeparatorChar _
-                        ) _
+            Dim PlugInsPath As String =
+                    IO.Path.Combine(
+                        SolidDevelopment.Web.Configurations.TemporaryRoot,
+                        String.Format("{0}{2}{1}",
+                            Configurations.WorkingPath.WorkingPathID,
+                            General.Context.Items.Item("ApplicationID"),
+                            IO.Path.DirectorySeparatorChar
+                        )
                     )
 
             ' Leave this Absolute as like this, check the InvokedObject explanation
@@ -544,7 +550,7 @@ Namespace SolidDevelopment.Web.Managers
                 Assembly._PrivateBinPath = System.AppDomain.CurrentDomain.SetupInformation.PrivateBinPath
             End If
 
-            Dim AssemblyKey As String = _
+            Dim AssemblyKey As String =
                 String.Format("KEY-{0}_{1}", PlugInsPath, AsDllName)
 
             Dim PlugInsAppDomain As System.AppDomain = Nothing
@@ -568,7 +574,7 @@ Namespace SolidDevelopment.Web.Managers
 
             Try
                 ' Invoke must use the same appdomain because of the context sync price
-                Dim InvokedObject As Object = PlugInsLoader.Invoke(AsClassName, AsFunctionName, ArgumentValueList)
+                Dim InvokedObject As Object = PlugInsLoader.Invoke(AsClassName, AsFunctionName, ArgumentValueList, ExecuterType.ToString())
 
                 If TypeOf InvokedObject Is Exception Then
                     rAssembleResultInfo.MethodResult = CType(InvokedObject, Exception)
@@ -579,8 +585,8 @@ Namespace SolidDevelopment.Web.Managers
                 rAssembleResultInfo.MethodResult = ex
             End Try
 
-            If Not rAssembleResultInfo.MethodResult Is Nothing AndAlso _
-                TypeOf rAssembleResultInfo.MethodResult Is Exception AndAlso _
+            If Not rAssembleResultInfo.MethodResult Is Nothing AndAlso
+                TypeOf rAssembleResultInfo.MethodResult Is Exception AndAlso
                 Configurations.Debugging Then
 
                 Try
@@ -592,10 +598,10 @@ Namespace SolidDevelopment.Web.Managers
                     Try
                         If Not System.Diagnostics.EventLog.SourceExists("XeoraCube") Then System.Diagnostics.EventLog.CreateEventSource("XeoraCube", "XeoraCube")
 
-                        System.Diagnostics.EventLog.WriteEntry("XeoraCube", _
-                            CType( _
-                                rAssembleResultInfo.MethodResult, Exception).ToString(), _
-                                EventLogEntryType.Error _
+                        System.Diagnostics.EventLog.WriteEntry("XeoraCube",
+                            CType(
+                                rAssembleResultInfo.MethodResult, Exception).ToString(),
+                                EventLogEntryType.Error
                         )
                     Catch exLogging02 As Exception
                         ' Just Handle Exception
@@ -610,13 +616,13 @@ QUICKEXIT:
             Dim rAssemblyMethod As System.Reflection.MethodInfo = Nothing
 
             For Each mI As System.Reflection.MethodInfo In AssemblyObject.GetMethods()
-                If String.Compare(mI.Name, CallFunctionName, True) = 0 AndAlso _
-                    ( _
-                        mI.GetParameters().Length = CallFunctionParams.Length OrElse _
-                        ( _
-                            mI.GetParameters().Length = 1 AndAlso _
-                            mI.GetParameters()(0).ParameterType Is GetType(Object()) _
-                        ) _
+                If String.Compare(mI.Name, CallFunctionName, True) = 0 AndAlso
+                    (
+                        mI.GetParameters().Length = CallFunctionParams.Length OrElse
+                        (
+                            mI.GetParameters().Length = 1 AndAlso
+                            mI.GetParameters()(0).ParameterType Is GetType(Object())
+                        )
                     ) Then
 
                     rAssemblyMethod = mI
@@ -625,7 +631,7 @@ QUICKEXIT:
                 End If
             Next
 
-            If rAssemblyMethod Is Nothing AndAlso _
+            If rAssemblyMethod Is Nothing AndAlso
                 Not AssemblyObject.BaseType Is Nothing Then
 
                 rAssemblyMethod = Assembly.GetAssemblyMethod(AssemblyObject.BaseType, CallFunctionName, CallFunctionParams)
@@ -648,14 +654,14 @@ QUICKEXIT:
                 objAssembly = [Assembly].PrepareExecutionDll(BlockKey, Statement, (StatementBlockID.Length - StatementBlockID.LastIndexOf(".NOCACHE")) = 8)
 
                 If Not objAssembly Is Nothing Then
-                    Dim AssemblyObject As System.Type = _
+                    Dim AssemblyObject As System.Type =
                         objAssembly.CreateInstance(String.Format("ExternalCall.{0}", BlockKey)).GetType()
-                    Dim MethodObject As System.Reflection.MethodInfo = _
+                    Dim MethodObject As System.Reflection.MethodInfo =
                         AssemblyObject.GetMethod("ExternalCallMethod")
 
-                    rMethodResult = MethodObject.Invoke(AssemblyObject, _
-                                                        Reflection.BindingFlags.DeclaredOnly Or _
-                                                        Reflection.BindingFlags.InvokeMethod, _
+                    rMethodResult = MethodObject.Invoke(AssemblyObject,
+                                                        Reflection.BindingFlags.DeclaredOnly Or
+                                                        Reflection.BindingFlags.InvokeMethod,
                                                         Nothing, Nothing, Nothing)
                 End If
             Catch ex As Exception
@@ -672,25 +678,25 @@ QUICKEXIT:
             Else
                 AddonInfos = New PGlobals.ThemeInfo.AddonInfo() {}
 
-                Dim DllTempLocation As String = _
-                    IO.Path.Combine( _
-                        SolidDevelopment.Web.Configurations.TemporaryRoot, _
-                        String.Format("{0}{2}{1}", _
-                            Configurations.WorkingPath.WorkingPathID, _
-                            General.Context.Items.Item("ApplicationID"), _
-                            IO.Path.DirectorySeparatorChar _
-                        ) _
+                Dim DllTempLocation As String =
+                    IO.Path.Combine(
+                        SolidDevelopment.Web.Configurations.TemporaryRoot,
+                        String.Format("{0}{2}{1}",
+                            Configurations.WorkingPath.WorkingPathID,
+                            General.Context.Items.Item("ApplicationID"),
+                            IO.Path.DirectorySeparatorChar
+                        )
                     )
 
-                Dim AddonsPath As String = _
-                        IO.Path.Combine( _
-                            Configurations.PyhsicalRoot, _
-                            String.Format("{0}Themes{2}{1}{2}Addons", Configurations.ApplicationRoot.FileSystemImplementation, ThemeID, IO.Path.DirectorySeparatorChar) _
+                Dim AddonsPath As String =
+                        IO.Path.Combine(
+                            Configurations.PyhsicalRoot,
+                            String.Format("{0}Themes{2}{1}{2}Addons", Configurations.ApplicationRoot.FileSystemImplementation, ThemeID, IO.Path.DirectorySeparatorChar)
                         )
 
                 If IO.Directory.Exists(AddonsPath) Then
                     For Each AddonPath As String In IO.Directory.GetDirectories(AddonsPath)
-                        If IO.Directory.Exists( _
+                        If IO.Directory.Exists(
                             IO.Path.Combine(AddonPath, "Dlls")) Then
 
                             Dim AddonDeploymentType As PGlobals.ThemeBase.DeploymentTypes, AddonName As String, AddonVersion As String = Nothing, AddonPassword As Byte() = Nothing
@@ -729,7 +735,7 @@ QUICKEXIT:
                                     AddonDeployment.ExtractApplication(ThemeID, AddonName, AddonPassword, DllTempLocation)
 
                                     Array.Resize(AddonInfos, AddonInfos.Length + 1)
-                                    AddonInfos(AddonInfos.Length - 1) = _
+                                    AddonInfos(AddonInfos.Length - 1) =
                                                     New PGlobals.ThemeInfo.AddonInfo(AddonDeploymentType, AddonName, AddonVersion, AddonPassword)
 
                                     Exit For
@@ -748,27 +754,27 @@ QUICKEXIT:
 
             Dim FI As New IO.FileInfo(dllLocation)
 
-            Assembly.LoadPlugInsLoader( _
-                        FI.Directory.FullName, _
-                        IO.Path.GetFileNameWithoutExtension(FI.Name), _
-                        AssemblyAppDomain, _
-                        PlugInsLoader _
+            Assembly.LoadPlugInsLoader(
+                        FI.Directory.FullName,
+                        IO.Path.GetFileNameWithoutExtension(FI.Name),
+                        AssemblyAppDomain,
+                        PlugInsLoader
                     )
 
             Dim IsInterfaceFound As Boolean = False
             If Not PlugInsLoader Is Nothing Then _
                 IsInterfaceFound = PlugInsLoader.ExamInterface("SolidDevelopment.Web.PGlobals+PlugInMarkers+IAddon")
 
-            Dim ApplicationCachePath As String = _
-                IO.Path.Combine( _
-                    AssemblyAppDomain.SetupInformation.CachePath, _
-                    AssemblyAppDomain.SetupInformation.ApplicationName _
+            Dim ApplicationCachePath As String =
+                IO.Path.Combine(
+                    AssemblyAppDomain.SetupInformation.CachePath,
+                    AssemblyAppDomain.SetupInformation.ApplicationName
                 )
 
             System.AppDomain.Unload(AssemblyAppDomain)
 
             ' CleanUp Addon Temporary Files In a Thread for not waiting their cleanup process finished...
-            Threading.ThreadPool.QueueUserWorkItem( _
+            Threading.ThreadPool.QueueUserWorkItem(
                 New System.Threading.WaitCallback(AddressOf Assembly.CleanUpAppDomainTemporaryFiles), ApplicationCachePath)
             ' !--
 
@@ -784,7 +790,7 @@ QUICKEXIT:
         End Sub
 
         Private Shared Sub LoadPlugInsLoader(ByVal PlugInsPath As String, ByVal DllName As String, ByRef AssemblyAppDomain As System.AppDomain, ByRef PlugInsLoader As SolidDevelopment.Web.Managers.PlugInsLoader)
-            Dim AssemblyAppDomainFriendlyName As String = _
+            Dim AssemblyAppDomainFriendlyName As String =
                 String.Format("{0}_{1}", System.AppDomain.CurrentDomain.FriendlyName, Date.Now.Ticks.ToString())
 
             Dim AssemblyAppDomainSetup As New System.AppDomainSetup
@@ -803,40 +809,40 @@ QUICKEXIT:
                 .ShadowCopyFiles = "true"
             End With
 
-            AssemblyAppDomain = _
-                        System.AppDomain.CreateDomain( _
-                            AssemblyAppDomainFriendlyName, _
-                            Nothing, _
-                            AssemblyAppDomainSetup _
+            AssemblyAppDomain =
+                        System.AppDomain.CreateDomain(
+                            AssemblyAppDomainFriendlyName,
+                            Nothing,
+                            AssemblyAppDomainSetup
                         )
             AddHandler AssemblyAppDomain.UnhandledException, New UnhandledExceptionEventHandler(AddressOf Assembly.OnUnhandledAppDomainExceptions)
 
             Try
                 Dim LoaderName As New System.Reflection.AssemblyName
-                LoaderName.CodeBase = IO.Path.Combine( _
-                                            System.AppDomain.CurrentDomain.BaseDirectory, _
-                                            String.Format("bin{0}WebPlugInsLoader.dll", IO.Path.DirectorySeparatorChar) _
+                LoaderName.CodeBase = IO.Path.Combine(
+                                            System.AppDomain.CurrentDomain.BaseDirectory,
+                                            String.Format("bin{0}WebPlugInsLoader.dll", IO.Path.DirectorySeparatorChar)
                                         )
 
                 Dim LoaderDll As System.Reflection.Assembly = AssemblyAppDomain.Load(LoaderName)
                 Dim LoaderType As Type = LoaderDll.GetExportedTypes()(0)
 
-                PlugInsLoader = _
-                    CType( _
-                        AssemblyAppDomain.CreateInstanceAndUnwrap( _
-                            LoaderDll.FullName, _
-                            LoaderType.FullName, _
-                            True, _
-                            Reflection.BindingFlags.CreateInstance, _
-                            Nothing, _
-                            New Object() { _
-                                PlugInsPath, _
-                                DllName _
-                            }, _
-                            System.Globalization.CultureInfo.CurrentCulture, _
-                            Nothing _
-                        ),  _
-                        SolidDevelopment.Web.Managers.PlugInsLoader _
+                PlugInsLoader =
+                    CType(
+                        AssemblyAppDomain.CreateInstanceAndUnwrap(
+                            LoaderDll.FullName,
+                            LoaderType.FullName,
+                            True,
+                            Reflection.BindingFlags.CreateInstance,
+                            Nothing,
+                            New Object() {
+                                PlugInsPath,
+                                DllName
+                            },
+                            System.Globalization.CultureInfo.CurrentCulture,
+                            Nothing
+                        ),
+                        SolidDevelopment.Web.Managers.PlugInsLoader
                     )
             Catch ex As Exception
                 PlugInsLoader = Nothing
@@ -845,17 +851,17 @@ QUICKEXIT:
 
         ' For Logging Purposes UnHandled Application Domain Exception Event Function
         Private Shared Sub OnUnhandledAppDomainExceptions(ByVal source As Object, ByVal args As UnhandledExceptionEventArgs)
-            If Not args.ExceptionObject Is Nothing AndAlso _
+            If Not args.ExceptionObject Is Nothing AndAlso
                 TypeOf args.ExceptionObject Is Exception Then
 
                 Try
                     If Not System.Diagnostics.EventLog.SourceExists("XeoraCube") Then System.Diagnostics.EventLog.CreateEventSource("XeoraCube", "XeoraCube")
 
-                    System.Diagnostics.EventLog.WriteEntry("XeoraCube", _
-                        " --- Loaded PlugIn Exception --- " & Environment.NewLine & Environment.NewLine & _
-                        CType( _
-                            args.ExceptionObject, Exception).ToString(), _
-                            EventLogEntryType.Error _
+                    System.Diagnostics.EventLog.WriteEntry("XeoraCube",
+                        " --- Loaded PlugIn Exception --- " & Environment.NewLine & Environment.NewLine &
+                        CType(
+                            args.ExceptionObject, Exception).ToString(),
+                            EventLogEntryType.Error
                     )
                 Catch ex As Exception
                     ' Just Handle Exception
@@ -902,7 +908,7 @@ QUICKEXIT:
 
                     Dim CSharpProvider As New Microsoft.CSharp.CSharpCodeProvider()
 
-                    Dim objCompiler As System.CodeDom.Compiler.CodeDomProvider = _
+                    Dim objCompiler As System.CodeDom.Compiler.CodeDomProvider =
                         System.CodeDom.Compiler.CodeDomProvider.CreateProvider("CSharp")
 
                     Dim CompilerParams As New System.CodeDom.Compiler.CompilerParameters()

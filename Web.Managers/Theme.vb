@@ -993,13 +993,13 @@ RENDERMETHODRESULT:
 PARENTCALL:
                                         tAssembleResultInfo =
                                             [Assembly].AssemblePostBackInformation(
-                                                            String.Join(":", controlValueSplitted, 1, controlValueSplitted.Length - 1), Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments))
+                                                            String.Join(":", controlValueSplitted, 1, controlValueSplitted.Length - 1), Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments), Assembly.ExecuterTypes.Other)
                                     Else
                                         tAssembleResultInfo =
                                             [Assembly].AssemblePostBackInformation(
                                                             Me._ParentInstance.CurrentID,
                                                             Me._CurrentInstance.CurrentID,
-                                                            String.Join(":", controlValueSplitted, 1, controlValueSplitted.Length - 1), Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments))
+                                                            String.Join(":", controlValueSplitted, 1, controlValueSplitted.Length - 1), Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments), Assembly.ExecuterTypes.Other)
 
                                         If tAssembleResultInfo.ReloadRequired Then GoTo PARENTCALL
                                     End If
@@ -1390,13 +1390,13 @@ BLOCKSTATEMENT_FINISH:
 PARENTCALL:
                     tAssembleResultInfo =
                         [Assembly].AssemblePostBackInformation(
-                            Control.SecurityInfo.CallFunction, argumentInfos)
+                            Control.SecurityInfo.CallFunction, argumentInfos, Assembly.ExecuterTypes.Control)
                 Else
                     tAssembleResultInfo =
                         [Assembly].AssemblePostBackInformation(
                             Me._ParentInstance.CurrentID,
                             Me._CurrentInstance.CurrentID,
-                            Control.SecurityInfo.CallFunction, argumentInfos)
+                            Control.SecurityInfo.CallFunction, argumentInfos, Assembly.ExecuterTypes.Control)
 
                     If tAssembleResultInfo.ReloadRequired Then GoTo PARENTCALL
                 End If
@@ -1525,13 +1525,13 @@ RESEARCH_DataList_END:
 PARENTCALL_DataList:
                                             tAssembleResultInfo =
                                                 [Assembly].AssemblePostBackInformation(
-                                                                objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments))
+                                                                objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments), Assembly.ExecuterTypes.Control)
                                         Else
                                             tAssembleResultInfo =
                                                 [Assembly].AssemblePostBackInformation(
                                                                 Me._ParentInstance.CurrentID,
                                                                 Me._CurrentInstance.CurrentID,
-                                                                objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments))
+                                                                objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments), Assembly.ExecuterTypes.Control)
 
                                             If tAssembleResultInfo.ReloadRequired Then GoTo PARENTCALL_DataList
                                         End If
@@ -1793,13 +1793,13 @@ RESEARCH_ConditionalStatement_END:
 PARENTCALL_ConditionalStatement:
                                         tAssembleResultInfo =
                                             [Assembly].AssemblePostBackInformation(
-                                                            objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments))
+                                                            objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments), Assembly.ExecuterTypes.Control)
                                     Else
                                         tAssembleResultInfo =
                                             [Assembly].AssemblePostBackInformation(
                                                             Me._ParentInstance.CurrentID,
                                                             Me._CurrentInstance.CurrentID,
-                                                            objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments))
+                                                            objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments), Assembly.ExecuterTypes.Control)
 
                                         If tAssembleResultInfo.ReloadRequired Then GoTo PARENTCALL_ConditionalStatement
                                     End If
@@ -1888,13 +1888,13 @@ RESEARCH_VariableBlock_END:
 PARENTCALL_VariableBlock:
                                         tAssembleResultInfo =
                                             [Assembly].AssemblePostBackInformation(
-                                                            objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments))
+                                                            objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments), Assembly.ExecuterTypes.Control)
                                     Else
                                         tAssembleResultInfo =
                                             [Assembly].AssemblePostBackInformation(
                                                             Me._ParentInstance.CurrentID,
                                                             Me._CurrentInstance.CurrentID,
-                                                            objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments))
+                                                            objControl.CallFunction, Globals.ArgumentInfo.ArgumentInfoCollection.Combine(RRI.GlobalArguments, ControlContentArguments), Assembly.ExecuterTypes.Control)
 
                                         If tAssembleResultInfo.ReloadRequired Then GoTo PARENTCALL_VariableBlock
                                     End If
@@ -2820,10 +2820,10 @@ SEARCHPARENT:
                 Dim tAssembleResultInfo As PGlobals.Execution.AssembleResultInfo
                 If Me._ParentID Is Nothing Then
                     tAssembleResultInfo = [Assembly].AssemblePostBackInformation(
-                                                    callFunction, Arguments)
+                                                    callFunction, Arguments, Assembly.ExecuterTypes.Undefined)
                 Else
                     tAssembleResultInfo = [Assembly].AssemblePostBackInformation(
-                                                    Me._ParentID, Me._CurrentID, callFunction, Arguments)
+                                                    Me._ParentID, Me._CurrentID, callFunction, Arguments, Assembly.ExecuterTypes.Undefined)
                 End If
 
                 Return Me.GenerateWebServiceXML(tAssembleResultInfo.MethodResult)

@@ -8,6 +8,7 @@ Namespace SolidDevelopment.Web.Managers
 
         Private _PostBackPath As String
         Private _AssemblyDll As System.Reflection.Assembly
+        Private _XeoraControls As System.Type() = Nothing
 
         Private _MissingFileException As Boolean = False
 
@@ -30,6 +31,30 @@ Namespace SolidDevelopment.Web.Managers
             Catch ex As System.Exception
                 Throw ex
             End Try
+
+            If Not Me._MissingFileException Then
+                Try
+                    Dim LoadedAssemblies As System.Reflection.Assembly() =
+                        System.AppDomain.CurrentDomain.GetAssemblies()
+
+                    If Not LoadedAssemblies Is Nothing Then
+                        For Each Assembly As System.Reflection.Assembly In LoadedAssemblies
+                            If String.Compare(Assembly.GetName().Name, "PlugInsHelper") = 0 Then
+                                Dim PlugInsHelperType As System.Type =
+                                    Assembly.GetType("SolidDevelopment.Web.PGlobals+MapControls")
+
+                                If Not PlugInsHelperType Is Nothing Then
+                                    Me._XeoraControls = PlugInsHelperType.GetNestedTypes()
+
+                                    Exit For
+                                End If
+                            End If
+                        Next
+                    End If
+                Catch ex As System.Exception
+                    ' Just Handle Exceptions
+                End Try
+            End If
         End Sub
 
         Public ReadOnly Property MissingFileException() As Boolean
@@ -72,11 +97,11 @@ Namespace SolidDevelopment.Web.Managers
             Return rBoolean
         End Function
 
-        Public Function Invoke(ByVal CallClassName As String, ByVal CallFunctionName As String, ByVal CallFunctionParams As Object()) As Object
-            Return Me.InvokeInternal(CallClassName, CallFunctionName, CallFunctionParams)
+        Public Function Invoke(ByVal CallClassName As String, ByVal CallFunctionName As String, ByVal CallFunctionParams As Object(), ByVal ExecuterType As String) As Object
+            Return Me.InvokeInternal(CallClassName, CallFunctionName, CallFunctionParams, ExecuterType)
         End Function
 
-        Private Function InvokeInternal(ByVal CallClassName As String, ByVal CallFunctionName As String, ByVal CallFunctionParams As Object()) As Object
+        Private Function InvokeInternal(ByVal CallClassName As String, ByVal CallFunctionName As String, ByVal CallFunctionParams As Object(), ByVal ExecuterType As String) As Object
             If String.IsNullOrEmpty(CallFunctionName) Then Throw New System.Exception("CallFunctionName can not be leave blank!")
             If CallFunctionParams Is Nothing Then Throw New System.Exception("CallFunctionParams can not be leave blank!")
 
@@ -91,21 +116,21 @@ Namespace SolidDevelopment.Web.Managers
             Dim rObject As Object = New System.Exception(String.Format("PlugIns Execution Error! RequestInfo: {0}", CompileErrorObject))
 
             Try
-                Dim ExamInterface As System.Type = _
+                Dim ExamInterface As System.Type =
                     Me._AssemblyDll.GetType(String.Format("WebDynamics.{0}", Me._PlugInsDllName), False, True)
 
                 If ExamInterface Is Nothing Then
                     Throw New System.Exception("Calling Assembly is not a XeoraCube PlugIn or Addon!")
                 Else
-                    Dim InterfaceType As System.Type = _
+                    Dim InterfaceType As System.Type =
                         ExamInterface.GetInterface("ITheme", True)
                     If InterfaceType Is Nothing Then InterfaceType = ExamInterface.GetInterface("IAddon", True)
 
-                    If InterfaceType Is Nothing OrElse _
-                        Not InterfaceType.IsInterface OrElse _
-                        ( _
-                            String.Compare(InterfaceType.FullName, "SolidDevelopment.Web.PGlobals+PlugInMarkers+ITheme") <> 0 AndAlso _
-                            String.Compare(InterfaceType.FullName, "SolidDevelopment.Web.PGlobals+PlugInMarkers+IAddon") <> 0 _
+                    If InterfaceType Is Nothing OrElse
+                        Not InterfaceType.IsInterface OrElse
+                        (
+                            String.Compare(InterfaceType.FullName, "SolidDevelopment.Web.PGlobals+PlugInMarkers+ITheme") <> 0 AndAlso
+                            String.Compare(InterfaceType.FullName, "SolidDevelopment.Web.PGlobals+PlugInMarkers+IAddon") <> 0
                         ) Then
 
                         Throw New System.Exception("Calling Assembly is not a XeoraCube PlugIn!")
@@ -120,16 +145,16 @@ Namespace SolidDevelopment.Web.Managers
                     AssemblyObject = Me._AssemblyDll.GetType(String.Format("WebDynamics.{0}", Me._PlugInsDllName), True, True)
                 End If
 
-                AssemblyMethod = Me.GetAssemblyMethod(AssemblyObject, CallFunctionName, CallFunctionParams)
+                AssemblyMethod = Me.GetAssemblyMethod(AssemblyObject, CallFunctionName, CallFunctionParams, ExecuterType)
 
                 If Not AssemblyMethod Is Nothing Then
-                    rObject = AssemblyMethod.Invoke( _
-                                        AssemblyObject, _
-                                        System.Reflection.BindingFlags.DeclaredOnly Or _
-                                        System.Reflection.BindingFlags.InvokeMethod, _
-                                        Nothing, _
-                                        CallFunctionParams, _
-                                        System.Threading.Thread.CurrentThread.CurrentCulture _
+                    rObject = AssemblyMethod.Invoke(
+                                        AssemblyObject,
+                                        System.Reflection.BindingFlags.DeclaredOnly Or
+                                        System.Reflection.BindingFlags.InvokeMethod,
+                                        Nothing,
+                                        CallFunctionParams,
+                                        System.Threading.Thread.CurrentThread.CurrentCulture
                                     )
                 Else
                     Dim sB As New System.Text.StringBuilder
@@ -139,7 +164,7 @@ Namespace SolidDevelopment.Web.Managers
                     sB.AppendFormat("PlugInsDllName: {0}", Me._PlugInsDllName) : sB.AppendLine()
                     sB.AppendFormat("CallClassName: {0}", CallClassName) : sB.AppendLine()
                     sB.AppendFormat("CallFunctionName: {0}", CallFunctionName) : sB.AppendLine()
-                    sB.AppendFormat("CallFunctionParamsLength: {0}", _
+                    sB.AppendFormat("CallFunctionParamsLength: {0}",
                         Microsoft.VisualBasic.IIf(CallFunctionParams Is Nothing, "0", CallFunctionParams.Length)) : sB.AppendLine()
 
                     Throw New System.Exception(sB.ToString())
@@ -151,7 +176,7 @@ Namespace SolidDevelopment.Web.Managers
             Return rObject
         End Function
 
-        Private Function GetAssemblyMethod(ByRef AssemblyObject As System.Type, ByVal CallFunctionName As String, ByRef CallFunctionParams As Object()) As System.Reflection.MethodInfo
+        Private Function GetAssemblyMethod(ByRef AssemblyObject As System.Type, ByVal CallFunctionName As String, ByRef CallFunctionParams As Object(), ByVal ExecuterType As String) As System.Reflection.MethodInfo
             Dim rAssemblyMethod As System.Reflection.MethodInfo = Nothing
 
             ' Sort and Filter Searching Function
@@ -159,25 +184,25 @@ Namespace SolidDevelopment.Web.Managers
             System.Array.Sort(AOMIs, New MethodInfoNameComparer(Nothing))
 
             Dim mIF As New MethodInfoFinder(CallFunctionName)
-            Dim MIFIdx As Integer = _
-                System.Array.FindIndex( _
-                    AOMIs, _
-                    New System.Predicate(Of System.Reflection.MethodInfo)(AddressOf mIF.MethodInfoFinder) _
+            Dim MIFIdx As Integer =
+                System.Array.FindIndex(
+                    AOMIs,
+                    New System.Predicate(Of System.Reflection.MethodInfo)(AddressOf mIF.MethodInfoFinder)
                 )
-            Dim MILIdx As Integer = _
-                System.Array.FindLastIndex( _
-                    AOMIs, _
-                    New System.Predicate(Of System.Reflection.MethodInfo)(AddressOf mIF.MethodInfoFinder) _
+            Dim MILIdx As Integer =
+                System.Array.FindLastIndex(
+                    AOMIs,
+                    New System.Predicate(Of System.Reflection.MethodInfo)(AddressOf mIF.MethodInfoFinder)
                 )
 
             If MIFIdx > -1 AndAlso MILIdx >= MIFIdx Then
-                Dim MethodInfos As System.Reflection.MethodInfo() = _
-                    CType( _
-                        System.Array.CreateInstance( _
-                            GetType(System.Reflection.MethodInfo), _
-                            (MILIdx - MIFIdx) + 1 _
-                        ),  _
-                        System.Reflection.MethodInfo() _
+                Dim MethodInfos As System.Reflection.MethodInfo() =
+                    CType(
+                        System.Array.CreateInstance(
+                            GetType(System.Reflection.MethodInfo),
+                            (MILIdx - MIFIdx) + 1
+                        ),
+                        System.Reflection.MethodInfo()
                     )
                 System.Array.Copy(AOMIs, MIFIdx, MethodInfos, 0, MethodInfos.Length)
                 System.Array.Sort(MethodInfos, New MethodInfoParameterLengthComparer)
@@ -185,45 +210,61 @@ Namespace SolidDevelopment.Web.Managers
                 Dim CallFunctionParams_ReBuild As Object()
 
                 For mC As Integer = 0 To MethodInfos.Length - 1
-                    CallFunctionParams_ReBuild = _
+                    CallFunctionParams_ReBuild =
                         CType(System.Array.CreateInstance(GetType(Object), CallFunctionParams.Length), Object())
                     System.Array.Copy(CallFunctionParams, CallFunctionParams_ReBuild, CallFunctionParams.Length)
 
-                    Dim mParams As System.Reflection.ParameterInfo() = _
+                    Dim IsXeoraControl As Boolean =
+                        Me.CheckFunctionResultTypeIsXeoraControl(MethodInfos(mC).ReturnType)
+                    Dim mParams As System.Reflection.ParameterInfo() =
                         MethodInfos(mC).GetParameters()
 
-                    If mParams.Length = 0 AndAlso _
+                    Select Case ExecuterType
+                        Case "Control"
+                            If Not IsXeoraControl Then Continue For
+                        Case "Other"
+                            If IsXeoraControl Then
+                                Select Case MethodInfos(mC).ReturnType.Name
+                                    Case "RedirectOrder", "MessageResult"
+                                        ' These are exceptional controls
+                                    Case Else
+                                        Continue For
+                                End Select
+                            End If
+                    End Select
+
+                    If mParams.Length = 0 AndAlso
                         CallFunctionParams_ReBuild.Length = 0 Then
 
                         rAssemblyMethod = MethodInfos(mC) : CallFunctionParams = CallFunctionParams_ReBuild
 
                         Exit For
-                    ElseIf mParams.Length > 0 AndAlso _
+                    ElseIf mParams.Length > 0 AndAlso
                             mParams.Length <= CallFunctionParams_ReBuild.Length Then
 
                         Dim MatchComplete As Boolean = False
-                        Dim IsExactMatch As Boolean() = _
+                        Dim IsExactMatch As Boolean() =
                             CType(System.Array.CreateInstance(GetType(Boolean), mParams.Length), Boolean())
 
                         For pC As Integer = 0 To mParams.Length - 1
                             If pC = mParams.Length - 1 Then
-                                Dim CheckIsParamArrayDefined As Boolean = _
+                                Dim CheckIsParamArrayDefined As Boolean =
                                     System.Attribute.IsDefined(mParams(pC), GetType(System.ParamArrayAttribute))
 
                                 If CheckIsParamArrayDefined Then
-                                    Dim ParamArrayValues As System.Array = _
-                                        System.Array.CreateInstance( _
-                                                mParams(pC).ParameterType.GetElementType(), _
-                                                (CallFunctionParams_ReBuild.Length - mParams.Length) + 1 _
+                                    Dim ParamArrayValues As System.Array =
+                                        System.Array.CreateInstance(
+                                                mParams(pC).ParameterType.GetElementType(),
+                                                (CallFunctionParams_ReBuild.Length - mParams.Length) + 1
                                             )
 
                                     For pavC As Integer = pC To CallFunctionParams_ReBuild.Length - 1
-                                        Me.FixFunctionParameter( _
+                                        Me.FixFunctionParameter(
                                             mParams(pC).ParameterType.GetElementType(), CallFunctionParams_ReBuild(pavC))
 
-                                        ParamArrayValues.SetValue( _
-                                            CallFunctionParams_ReBuild(pavC), _
-                                            pavC - (mParams.Length - 1) _
+                                        ParamArrayValues.SetValue(
+                                            CallFunctionParams_ReBuild(pavC),
+                                            pavC - (mParams.Length - 1)
                                         )
                                     Next
 
@@ -232,19 +273,19 @@ Namespace SolidDevelopment.Web.Managers
 
                                     IsExactMatch(pC) = True : MatchComplete = True
                                 Else
-                                    IsExactMatch(pC) = Me.FixFunctionParameter( _
+                                    IsExactMatch(pC) = Me.FixFunctionParameter(
                                                         mParams(pC).ParameterType, CallFunctionParams_ReBuild(pC))
 
-                                    If mParams.Length = CallFunctionParams_ReBuild.Length AndAlso _
+                                    If mParams.Length = CallFunctionParams_ReBuild.Length AndAlso
                                         System.Array.IndexOf(IsExactMatch, False) = -1 Then MatchComplete = True
                                 End If
                             Else
-                                IsExactMatch(pC) = Me.FixFunctionParameter( _
+                                IsExactMatch(pC) = Me.FixFunctionParameter(
                                                     mParams(pC).ParameterType, CallFunctionParams_ReBuild(pC))
                             End If
                         Next
 
-                        If MatchComplete AndAlso _
+                        If MatchComplete AndAlso
                             System.Array.IndexOf(IsExactMatch, False) = -1 Then
 
                             rAssemblyMethod = MethodInfos(mC) : CallFunctionParams = CallFunctionParams_ReBuild
@@ -255,10 +296,10 @@ Namespace SolidDevelopment.Web.Managers
                 Next
             End If
 
-            If rAssemblyMethod Is Nothing AndAlso _
+            If rAssemblyMethod Is Nothing AndAlso
                 Not AssemblyObject.BaseType Is Nothing Then
 
-                rAssemblyMethod = Me.GetAssemblyMethod(AssemblyObject.BaseType, CallFunctionName, CallFunctionParams)
+                rAssemblyMethod = Me.GetAssemblyMethod(AssemblyObject.BaseType, CallFunctionName, CallFunctionParams, ExecuterType)
 
                 If Not rAssemblyMethod Is Nothing Then AssemblyObject = AssemblyObject.BaseType
             End If
@@ -279,19 +320,19 @@ Namespace SolidDevelopment.Web.Managers
 
                             rBoolean = True
                         Catch ex As System.Exception
-                            If TypeOf CallFunctionParam Is String AndAlso _
-                                String.IsNullOrEmpty(CType(CallFunctionParam, String)) AndAlso _
-                                ( _
-                                    ParameterType.Equals(GetType(Byte)) OrElse _
-                                    ParameterType.Equals(GetType(SByte)) OrElse _
-                                    ParameterType.Equals(GetType(Short)) OrElse _
-                                    ParameterType.Equals(GetType(UShort)) OrElse _
-                                    ParameterType.Equals(GetType(Integer)) OrElse _
-                                    ParameterType.Equals(GetType(UInteger)) OrElse _
-                                    ParameterType.Equals(GetType(Long)) OrElse _
-                                    ParameterType.Equals(GetType(ULong)) OrElse _
-                                    ParameterType.Equals(GetType(Double)) OrElse _
-                                    ParameterType.Equals(GetType(Single)) _
+                            If TypeOf CallFunctionParam Is String AndAlso
+                                String.IsNullOrEmpty(CType(CallFunctionParam, String)) AndAlso
+                                (
+                                    ParameterType.Equals(GetType(Byte)) OrElse
+                                    ParameterType.Equals(GetType(SByte)) OrElse
+                                    ParameterType.Equals(GetType(Short)) OrElse
+                                    ParameterType.Equals(GetType(UShort)) OrElse
+                                    ParameterType.Equals(GetType(Integer)) OrElse
+                                    ParameterType.Equals(GetType(UInteger)) OrElse
+                                    ParameterType.Equals(GetType(Long)) OrElse
+                                    ParameterType.Equals(GetType(ULong)) OrElse
+                                    ParameterType.Equals(GetType(Double)) OrElse
+                                    ParameterType.Equals(GetType(Single))
                                 ) Then
 
                                 CallFunctionParam = 0
@@ -304,15 +345,15 @@ Namespace SolidDevelopment.Web.Managers
                     End If
                 End If
             Else
-                If ParameterType.Equals(GetType(Byte)) OrElse _
-                    ParameterType.Equals(GetType(SByte)) OrElse _
-                    ParameterType.Equals(GetType(Short)) OrElse _
-                    ParameterType.Equals(GetType(UShort)) OrElse _
-                    ParameterType.Equals(GetType(Integer)) OrElse _
-                    ParameterType.Equals(GetType(UInteger)) OrElse _
-                    ParameterType.Equals(GetType(Long)) OrElse _
-                    ParameterType.Equals(GetType(ULong)) OrElse _
-                    ParameterType.Equals(GetType(Double)) OrElse _
+                If ParameterType.Equals(GetType(Byte)) OrElse
+                    ParameterType.Equals(GetType(SByte)) OrElse
+                    ParameterType.Equals(GetType(Short)) OrElse
+                    ParameterType.Equals(GetType(UShort)) OrElse
+                    ParameterType.Equals(GetType(Integer)) OrElse
+                    ParameterType.Equals(GetType(UInteger)) OrElse
+                    ParameterType.Equals(GetType(Long)) OrElse
+                    ParameterType.Equals(GetType(ULong)) OrElse
+                    ParameterType.Equals(GetType(Double)) OrElse
                     ParameterType.Equals(GetType(Single)) Then
 
                     CallFunctionParam = 0
@@ -322,6 +363,20 @@ Namespace SolidDevelopment.Web.Managers
             End If
 
             Return rBoolean
+        End Function
+
+        Private Function CheckFunctionResultTypeIsXeoraControl(ByVal MethodReturnType As System.Type) As Boolean
+            Dim rResult As Boolean = False
+
+            If Not Me._XeoraControls Is Nothing AndAlso
+                Not MethodReturnType Is Nothing Then
+
+                For Each XeoraType As System.Type In Me._XeoraControls
+                    If XeoraType Is MethodReturnType Then rResult = True : Exit For
+                Next
+            End If
+
+            Return rResult
         End Function
 
         Private Class MethodInfoFinder
